@@ -1,0 +1,101 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fmodern\fcharset0 Courier;\f1\fnil\fcharset0 Menlo-Regular;\f2\froman\fcharset0 Times-Bold;
+\f3\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red20\green20\blue20;\red0\green0\blue0;
+\red121\green178\blue168;}
+{\*\expandedcolortbl;;\csgray\c0;\cssrgb\c10274\c10274\c10274;\cssrgb\c0\c0\c0;
+\cssrgb\c54118\c74510\c71765;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs26 \cf0 \expnd0\expndtw0\kerning0
+Log into AWS with SSO\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 aws sso login --profile housing-prototype                        \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs26 \cf0 \expnd0\expndtw0\kerning0
+\CocoaLigature1 \
+Do these in /code/github/portolio-rds-manager\
+\
+\pard\pardeftab720\sa298\partightenfactor0
+
+\f2\b\fs36 \cf0 Integration with RDS Manager\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f3\b0\fs24 \cf3 Use both managers together for maximum savings:\
+\pard\pardeftab720\partightenfactor0
+\cf3 bash\
+# Stop everything\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 aws sso login --profile housing-prototype && 
+\f3\fs24 \cf3 \expnd0\expndtw0\kerning0
+\CocoaLigature1 ./portfolio-nat-manager.sh stop primary-nat\
+
+\f1\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 aws sso login --profile housing-prototype && 
+\f3\fs24 \cf3 \expnd0\expndtw0\kerning0
+\CocoaLigature1 ./portfolio-rds-manager.sh stop bloom-prototype\
+
+\f1\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 aws sso login --profile housing-prototype && 
+\f3\fs24 \cf3 \expnd0\expndtw0\kerning0
+\CocoaLigature1 ./portfolio-rds-manager.sh stop snomass\
+\pard\pardeftab720\partightenfactor0
+\cf3 \
+# Check combined costs\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 aws sso login --profile housing-prototype && 
+\f3\fs24 \cf3 \expnd0\expndtw0\kerning0
+\CocoaLigature1 ./portfolio-nat-manager.sh cost-estimate\
+
+\f1\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 aws sso login --profile housing-prototype && 
+\f3\fs24 \cf3 \expnd0\expndtw0\kerning0
+\CocoaLigature1 ./portfolio-rds-manager.sh cost-estimate\
+\pard\pardeftab720\partightenfactor0
+\cf3 \
+# Start it all again when needed\
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs26 \cf0 \outl0\strokewidth0 \strokec4 AWS_PROFILE=housing-prototype ./portfolio-nat-manager.sh start portfolio-managed-nat  \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 \outl0\strokewidth0 \
+aws sso login --profile housing-prototype && 
+\f3\fs24 \cf3 \expnd0\expndtw0\kerning0
+\CocoaLigature1 ./portfolio-rds-manager.sh start bloom-prototype\
+
+\f1\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 aws sso login --profile housing-prototype && 
+\f3\fs24 \cf3 \expnd0\expndtw0\kerning0
+\CocoaLigature1 ./portfolio-rds-manager.sh start snomass\
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs26 \cf0 \
+\
+RDS\
+\pard\pardeftab720\partightenfactor0
+\cf5 export \cf0 AWS_PROFILE=housing-prototype && ./portfolio-rds-manager.sh stop bloom-prototype\
+\cf5 export \cf0 AWS_PROFILE=housing-prototype && ./portfolio-rds-manager.sh stop snomass\
+\cf5 export \cf0 AWS_PROFILE=housing-prototype && ./portfolio-rds-manager.sh status\
+\
+# Check what NAT Gateways are configured\
+./portfolio-nat-manager.sh list\
+# See current status and costs\
+./portfolio-nat-manager.sh status\
+# Delete NAT (save money)\
+./portfolio-nat-manager.sh stop <name>\
+# Recreate NAT (when you need it)\
+./portfolio-nat-manager.sh start <name>\
+# View cost breakdown\
+./portfolio-nat-manager.sh cost-estimate\
+\
+Not working\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardeftab720\pardirnatural\partightenfactor0
+
+\f1\fs22 \cf2 \kerning1\expnd0\expndtw0 \CocoaLigature0 \
+aws sso login --profile housing-prototype && 
+\f0\fs26 \cf0 \expnd0\expndtw0\kerning0
+\CocoaLigature1 ./portfolio-nat-manager.sh start portfolio-managed-nat\
+}

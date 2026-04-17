@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Runtime state files — machine-local, contain live infrastructure IDs
+portfolio-rds-manager/.portfolio-nat-state.json
+portfolio-rds-manager/.portfolio-rds-state
+
+# Lambda build artifacts — rebuilt by deploy.sh
+portfolio-rds-manager/lambda-function.zip
+
+# Stray SQLite files
+*.db
+*.db-shm
+*.db-wal
+
+# Claude Code session dirs
+.claude/

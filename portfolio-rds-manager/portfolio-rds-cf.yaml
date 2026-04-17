@@ -1,0 +1,285 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Portfolio RDS Manager - Lambda, EventBridge, DynamoDB automation'
+
+Parameters:
+  NotificationEmail:
+    Type: String
+    Description: Email address for SNS notifications (optional)
+    Default: ''
+
+Conditions:
+  HasNotificationEmail: !Not [!Equals [!Ref NotificationEmail, '']]
+
+Resources:
+  ##############################################################################
+  # DynamoDB Table for State Management
+  ##############################################################################
+  
+  PortfolioRDSStateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: portfolio-rds-state
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: instance_name
+          AttributeType: S
+      KeySchema:
+        - AttributeName: instance_name
+          KeyType: HASH
+      Tags:
+        - Key: Purpose
+          Value: PortfolioRDSManagement
+
+  ##############################################################################
+  # S3 Bucket for Config (optional - for storing config in S3)
+  ##############################################################################
+  
+  PortfolioConfigBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'portfolio-rds-config-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Purpose
+          Value: PortfolioRDSConfig
+
+  ##############################################################################
+  # SNS Topic for Notifications
+  ##############################################################################
+  
+  PortfolioRDSNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: portfolio-rds-notifications
+      DisplayName: Portfolio RDS Manager Notifications
+      Tags:
+        - Key: Purpose
+          Value: PortfolioRDSManagement
+
+  # SNS Subscription (if email provided)
+  PortfolioRDSNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasNotificationEmail
+    Properties:
+      Protocol: email
+      TopicArn: !Ref PortfolioRDSNotificationTopic
+      Endpoint: !Ref NotificationEmail
+
+  ##############################################################################
+  # IAM Role and Policy for Lambda
+  ##############################################################################
+  
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: portfolio-rds-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: PortfolioRDSLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # RDS permissions
+              - Effect: Allow
+                Action:
+                  - rds:DescribeDBInstances
+                  - rds:StartDBInstance
+                  - rds:StopDBInstance
+                  - rds:DeleteDBInstance
+                  - rds:CreateDBInstance
+                  - rds:ModifyDBInstance
+                  - rds:DescribeDBSnapshots
+                  - rds:CreateDBSnapshot
+                  - rds:RestoreDBInstanceFromDBSnapshot
+                Resource: !Sub 'arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:*'
+              
+              # DynamoDB permissions
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !GetAtt PortfolioRDSStateTable.Arn
+              
+              # S3 permissions (for config)
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt PortfolioConfigBucket.Arn
+                  - !Sub '${PortfolioConfigBucket.Arn}/*'
+              
+              # SNS permissions (for notifications)
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref PortfolioRDSNotificationTopic
+              
+              # EC2 permissions (for security groups/subnet info)
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeSubnets
+                Resource: '*'
+
+              # RDS subnet group permissions
+              - Effect: Allow
+                Action:
+                  - rds:DescribeDBSubnetGroups
+                Resource: '*'
+
+  ##############################################################################
+  # Lambda Function
+  ##############################################################################
+  
+  PortfolioRDSLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: portfolio-rds-manager
+      Runtime: python3.11
+      Timeout: 900
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          STATE_TABLE: !Ref PortfolioRDSStateTable
+          CONFIG_BUCKET: !Ref PortfolioConfigBucket
+          SNS_TOPIC_ARN: !Ref PortfolioRDSNotificationTopic
+      Code:
+        ZipFile: |
+          # Lambda function code will be deployed via CLI
+          # For now, use placeholder that can be updated
+          import json
+          def lambda_handler(event, context):
+              return {'statusCode': 200, 'body': json.dumps('Placeholder')}
+      Tags:
+        - Key: Purpose
+          Value: PortfolioRDSManagement
+
+  ##############################################################################
+  # EventBridge Rule for Scheduled Execution
+  ##############################################################################
+  
+  PortfolioRDSScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: portfolio-rds-auto-restart-schedule
+      Description: Check stopped RDS instances every 6 hours for auto-restart
+      ScheduleExpression: 'cron(0 */6 * * ? *)'  # Every 6 hours
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt PortfolioRDSLambda.Arn
+          Id: PortfolioRDSLambdaTarget
+
+  # Permission for EventBridge to invoke Lambda
+  PortfolioRDSLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PortfolioRDSLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt PortfolioRDSScheduleRule.Arn
+
+  ##############################################################################
+  # CloudWatch Log Group
+  ##############################################################################
+  
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${PortfolioRDSLambda}'
+      RetentionInDays: 7
+
+  ##############################################################################
+  # Optional: SNS Topic Policy (for Lambda to publish)
+  ##############################################################################
+  
+  SNSTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref PortfolioRDSNotificationTopic
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowLambdaPublish
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sns:Publish
+            Resource: !Ref PortfolioRDSNotificationTopic
+          - Sid: AllowAccountSubscribe
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - sns:Subscribe
+            Resource: !Ref PortfolioRDSNotificationTopic
+
+##############################################################################
+# Outputs
+##############################################################################
+
+Outputs:
+  DynamoDBTableName:
+    Description: DynamoDB table for RDS state tracking
+    Value: !Ref PortfolioRDSStateTable
+    Export:
+      Name: PortfolioRDSStateTable
+
+  ConfigBucketName:
+    Description: S3 bucket for configuration storage
+    Value: !Ref PortfolioConfigBucket
+    Export:
+      Name: PortfolioConfigBucket
+
+  SNSTopicArn:
+    Description: SNS topic for notifications
+    Value: !Ref PortfolioRDSNotificationTopic
+    Export:
+      Name: PortfolioRDSNotificationTopic
+
+  LambdaFunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt PortfolioRDSLambda.Arn
+    Export:
+      Name: PortfolioRDSLambdaArn
+
+  LambdaFunctionName:
+    Description: Lambda function name
+    Value: !Ref PortfolioRDSLambda
+    Export:
+      Name: PortfolioRDSLambdaName
+
+  EventBridgeRuleName:
+    Description: EventBridge rule for auto-restart
+    Value: !Ref PortfolioRDSScheduleRule
+    Export:
+      Name: PortfolioRDSScheduleRule
+
+  DeploymentInstructions:
+    Description: Next steps for deployment
+    Value: |
+      1. Deploy this stack: aws cloudformation deploy --template-file portfolio-rds-cf.yaml --stack-name portfolio-rds-manager --parameter-overrides NotificationEmail=your-email@example.com --capabilities CAPABILITY_NAMED_IAM
+      2. Upload config: aws s3 cp rds-portfolio-config.yaml s3://portfolio-rds-config-<account-id>/
+      3. Upload Lambda: aws lambda update-function-code --function-name portfolio-rds-manager --zip-file fileb://lambda-function.zip
+      4. Test CLI: chmod +x portfolio-rds-manager.sh && ./portfolio-rds-manager.sh status
