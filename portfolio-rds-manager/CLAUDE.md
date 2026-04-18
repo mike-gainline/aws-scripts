@@ -6,6 +6,16 @@ Cost-optimization tooling for AWS prototyping environments. Two managers work to
 - **RDS Manager** — stop/start RDS instances to save ~50% monthly
 - **NAT Manager** — delete/recreate NAT Gateways to save ~$40/month each
 
+## ⚠ Keep This Repo Private
+
+The YAML config files (`nat-portfolio-config.yaml`, `rds-portfolio-config.yaml`) contain
+account-specific AWS resource IDs: account ID, subnet IDs, security group IDs, EIP
+allocation IDs, and route table IDs. These are gitignored — the committed versions are
+`*.example.yaml` with placeholders.
+
+**If you ever consider making this repo public:** verify `git status` shows the real
+config files as untracked/ignored, not committed.
+
 ## AWS Configuration
 
 - **Region**: `us-east-1`

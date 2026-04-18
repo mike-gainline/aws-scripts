@@ -5,6 +5,11 @@
 portfolio-rds-manager/.portfolio-nat-state.json
 portfolio-rds-manager/.portfolio-rds-state
 
+# Real config files — contain AWS account ID and resource IDs (subnet, SG, route table IDs).
+# Commit the *.example.yaml versions instead; copy to these names to use locally.
+portfolio-rds-manager/nat-portfolio-config.yaml
+portfolio-rds-manager/rds-portfolio-config.yaml
+
 # Lambda build artifacts — rebuilt by deploy.sh
 portfolio-rds-manager/lambda-function.zip
 

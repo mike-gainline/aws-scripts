@@ -1,45 +1,48 @@
-# NAT Gateway Portfolio Configuration
+# NAT Gateway Portfolio Configuration — EXAMPLE / TEMPLATE
 # ========================================
-# This config file defines all NAT Gateways to manage and their configuration.
-# Add new NAT Gateways here - no code changes needed!
+# SETUP: Copy this file to nat-portfolio-config.yaml and fill in your real values.
+#
+#   cp nat-portfolio-config.example.yaml nat-portfolio-config.yaml
+#
+# nat-portfolio-config.yaml is gitignored because it contains account-specific
+# AWS resource IDs (subnet IDs, EIP allocation IDs, route table IDs).
+# Never commit the real file — keep this example in its place.
 
 version: "1.0"
-aws_account_id: "311330778203"
+aws_account_id: "YOUR_AWS_ACCOUNT_ID"       # e.g. "123456789012"
 aws_region: "us-east-1"
 
 nat_gateways:
   - name: "portfolio-managed-nat"
     description: "Managed NAT Gateway for SNO Mass and Bloom applications"
     availability_zone: "us-east-1a"
-    subnet_id: "subnet-06b37301fd46ae26d"  # SNOMassDatabaseStack/SNOMassVPC/PublicSubnet1
+    subnet_id: "YOUR_PUBLIC_SUBNET_ID"      # Find with: aws ec2 describe-subnets
 
-    # Elastic IP allocation ID - Created: 52.72.164.240
-    allocation_id: "eipalloc-0ef0d1621fb6a8884"
+    # Elastic IP allocation ID
+    allocation_id: "YOUR_EIP_ALLOCATION_ID" # Find with: aws ec2 describe-addresses
 
-    # Route tables for private subnets (SNO Mass and Bloom apps use these)
+    # Route tables for private subnets
     route_tables:
-      - "rtb-00ef75c505344b6c0"  # SNOMassDatabaseStack/SNOMassVPC/PrivateSubnet1
-      - "rtb-00e26203f58252d3f"  # SNOMassDatabaseStack/SNOMassVPC/PrivateSubnet2
-    
-    # Route destination (typically 0.0.0.0/0 for all internet traffic)
+      - "YOUR_PRIVATE_ROUTE_TABLE_ID_1"     # Find with: aws ec2 describe-route-tables
+      - "YOUR_PRIVATE_ROUTE_TABLE_ID_2"
+
     route_destination: "0.0.0.0/0"
-    
-    # Tags for cost tracking and identification
+
     tags:
-      Project: "SNOMass-Bloom-Portfolio"
+      Project: "YOUR_PROJECT_NAME"
       Environment: "Production"
       CostCenter: "Portfolio"
-      Applications: "SNOMass,BloomPrototype"
+      Applications: "App1,App2"
       ManagedBy: "PortfolioNATManager"
 
-  # Template for adding more NAT Gateways:
+  # Template for additional NAT Gateways:
   # - name: "secondary-nat"
   #   description: "Secondary NAT Gateway for us-east-1b"
   #   availability_zone: "us-east-1b"
-  #   subnet_id: "subnet-yyyyyyyy"
-  #   allocation_id: "eipalloc-yyyyyyyy"
+  #   subnet_id: "YOUR_SUBNET_ID"
+  #   allocation_id: "YOUR_EIP_ALLOCATION_ID"
   #   route_tables:
-  #     - "rtb-zzzzzzzz"
+  #     - "YOUR_ROUTE_TABLE_ID"
   #   route_destination: "0.0.0.0/0"
   #   tags:
   #     Project: "PortfolioApps"
@@ -51,17 +54,15 @@ cost_estimates:
   deleted_per_month: 1   # ~$0.32-1/month for Elastic IP storage only
   hourly_rate: 0.045     # Plus $0.045/GB for data processed
 
-# Notes for configuration:
-# 1. Find your subnet IDs:
+# Finding your resource IDs:
+# 1. Subnet IDs:
 #    aws ec2 describe-subnets --query 'Subnets[].{Name:Tags[0].Value,SubnetId:SubnetId}' --output table
 #
-# 2. Create or find an Elastic IP:
+# 2. EIP allocation IDs:
 #    aws ec2 allocate-address --domain vpc
 #    aws ec2 describe-addresses --query 'Addresses[?AssociationId==null]'
 #
-# 3. Find your route tables:
+# 3. Route table IDs:
 #    aws ec2 describe-route-tables --query 'RouteTables[].{Name:Tags[0].Value,RouteTableId:RouteTableId}' --output table
 #
-# 4. Update configuration with actual IDs
-#
-# 5. Test with: ./portfolio-nat-manager.sh list
+# 4. Test after setup: ./portfolio-nat-manager.sh list

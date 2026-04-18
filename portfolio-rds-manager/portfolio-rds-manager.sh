@@ -82,7 +82,7 @@ check_dependencies() {
 # Load config from YAML
 load_config() {
     if [ ! -f "$CONFIG_FILE" ]; then
-        die "Config file not found: $CONFIG_FILE"
+        die "Config file not found: $CONFIG_FILE\n  Set up with: cp rds-portfolio-config.example.yaml rds-portfolio-config.yaml"
     fi
 }
 

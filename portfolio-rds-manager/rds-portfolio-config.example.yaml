@@ -1,0 +1,73 @@
+# RDS Portfolio Management Configuration — EXAMPLE / TEMPLATE
+# ========================================
+# SETUP: Copy this file to rds-portfolio-config.yaml and fill in your real values.
+#
+#   cp rds-portfolio-config.example.yaml rds-portfolio-config.yaml
+#
+# rds-portfolio-config.yaml is gitignored because it contains account-specific
+# AWS resource IDs (security group IDs, RDS identifiers, S3 bucket names).
+# Never commit the real file — keep this example in its place.
+
+version: "1.0"
+aws_account_id: "YOUR_AWS_ACCOUNT_ID"       # e.g. "123456789012"
+aws_region: "us-east-1"
+
+# S3 bucket for database backups
+s3_backup_bucket: "portfolio-db-backups-YOUR_AWS_ACCOUNT_ID"
+s3_backup_lifecycle_days: 90
+
+# DynamoDB table for state tracking (auto-created if needed)
+dynamodb_state_table: "portfolio-rds-state"
+
+instances:
+  - name: "my-app-db"
+    db_identifier: "my-app-db-identifier"   # RDS instance identifier in AWS console
+    engine: "postgres"                       # postgres | mysql | mariadb
+    engine_version: "15.4"
+    instance_class: "db.t3.micro"
+    allocated_storage: 20
+    master_username: "postgres"
+    database_name: "mydb"
+    vpc_security_groups: ["YOUR_SECURITY_GROUP_ID"]  # sg-xxxxxxxxx
+    db_subnet_group: "default"
+
+    lifecycle:
+      # strategy: "stop-start" — pause compute, keep storage (~50% savings, instant resume)
+      # strategy: "delete-restore" — full backup/restore (~100% savings, 10-15 min setup)
+      strategy: "stop-start"
+      auto_restart_days: 7   # Lambda restarts after this many days (AWS limitation)
+      backup_before_delete: true
+      backup_retention_days: 30
+
+    notifications_enabled: true
+    notification_email: "you@example.com"
+
+    tags:
+      Project: "My App"
+      Environment: "Prototype"
+      CostCenter: "Portfolio"
+
+  # Add more instances following the same pattern above.
+  # Find your security group IDs:
+  #   aws ec2 describe-security-groups --query 'SecurityGroups[].{Name:GroupName,ID:GroupId}' --output table
+  #
+  # Find your RDS identifiers:
+  #   aws rds describe-db-instances --query 'DBInstances[].DBInstanceIdentifier' --output table
+
+# Lambda configuration
+lambda:
+  function_name: "portfolio-rds-manager"
+  log_retention_days: 7
+  timeout_seconds: 300
+  schedule_expression: "cron(0 */6 * * ? *)"   # Every 6 hours
+
+# Cost estimates (db.t3.micro, adjust for other instance classes)
+cost_estimates:
+  postgres_running: 13.00
+  postgres_stopped: 6.50
+  postgres_deleted_storage: 0.12
+  mysql_running: 13.00
+  mysql_stopped: 6.50
+  mysql_deleted_storage: 0.12
+  s3_storage_per_gb: 0.023
+  s3_request_cost: 0.0004

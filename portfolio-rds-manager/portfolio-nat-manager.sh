@@ -90,7 +90,7 @@ check_dependencies() {
 # Load config from YAML
 load_config() {
     if [ ! -f "$CONFIG_FILE" ]; then
-        die "Config file not found: $CONFIG_FILE"
+        die "Config file not found: $CONFIG_FILE\n  Set up with: cp nat-portfolio-config.example.yaml nat-portfolio-config.yaml"
     fi
 }
 
