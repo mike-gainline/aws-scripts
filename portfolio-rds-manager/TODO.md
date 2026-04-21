@@ -26,8 +26,10 @@
 
 ## RDS Manager (`portfolio-rds-manager.sh`)
 
+### Bugs Fixed (2026-04-20)
+- [x] **AWS profile** — Added `AWS_PROFILE="${AWS_PROFILE:-housing-prototype}"` config var and `--profile "$AWS_PROFILE"` to all AWS calls (same pattern as NAT manager)
+
 ### Status
-- [ ] **Verify AWS profile** — Check if RDS manager also needs `--profile housing-prototype` added (same auth issue pattern as NAT manager)
 - [ ] **Test stop/start** — Confirm RDS stop/start works end-to-end with SSO profile
 
 ---
@@ -46,10 +48,10 @@
 ---
 
 ## Documentation
-- [x] `CLAUDE.md` created — project context for Claude Code sessions
-- [x] `TODO.md` created — this file
-- [ ] Update `README-NAT-GATEWAY-MANAGER.md` troubleshooting section with SSO/profile instructions
-- [ ] Update `QUICK-START-NAT-MANAGER.md` prerequisites to mention SSO login step
+- [x] `CLAUDE.md` — project context, kept as the single living doc
+- [x] `TODO.md` — this file
+- [x] Removed stale setup artifacts: `README-NAT-GATEWAY-MANAGER.md`, `QUICK-START-NAT-MANAGER.md`, `CLAUDE-CODE-NAT-PROMPT.txt`, `Reference/`, `Start Here/`
+- [x] Folded unique content (config lookup commands, state file format, full troubleshooting) into `CLAUDE.md`
 
 ---
 

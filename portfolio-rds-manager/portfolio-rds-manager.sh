@@ -25,6 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/rds-portfolio-config.yaml"
 STATE_TABLE="portfolio-rds-state"
 REGION="us-east-1"
+AWS_PROFILE="${AWS_PROFILE:-housing-prototype}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -103,6 +104,7 @@ get_rds_instance_status() {
     aws rds describe-db-instances \
         --db-instance-identifier "$db_identifier" \
         --region "$REGION" \
+        --profile "$AWS_PROFILE" \
         --query 'DBInstances[0]' \
         --output json
 }
@@ -263,13 +265,15 @@ cmd_stop() {
     log_info "Sending stop request to RDS..."
     aws rds stop-db-instance \
         --db-instance-identifier "$db_id" \
-        --region "$REGION" > /dev/null || die "Failed to stop instance"
-    
+        --region "$REGION" \
+        --profile "$AWS_PROFILE" > /dev/null || die "Failed to stop instance"
+
     # Wait for stopped state
     log_info "Waiting for instance to stop (this takes ~1 minute)..."
     aws rds wait db-instance-stopped \
         --db-instance-identifier "$db_id" \
-        --region "$REGION" || die "Timeout waiting for stop"
+        --region "$REGION" \
+        --profile "$AWS_PROFILE" || die "Timeout waiting for stop"
     
     # Save state
     save_state "$instance_name" "status" "stopped"
@@ -296,13 +300,15 @@ cmd_start() {
     log_info "Sending start request to RDS..."
     aws rds start-db-instance \
         --db-instance-identifier "$db_id" \
-        --region "$REGION" > /dev/null || die "Failed to start instance"
-    
+        --region "$REGION" \
+        --profile "$AWS_PROFILE" > /dev/null || die "Failed to start instance"
+
     # Wait for available state
     log_info "Waiting for instance to start (this takes ~2 minutes)..."
     aws rds wait db-instance-available \
         --db-instance-identifier "$db_id" \
-        --region "$REGION" || die "Timeout waiting for start"
+        --region "$REGION" \
+        --profile "$AWS_PROFILE" || die "Timeout waiting for start"
     
     # Get new endpoint
     local endpoint=$(get_rds_instance_status "$db_id" | jq -r '.Endpoint.Address')

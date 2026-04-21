@@ -81,7 +81,38 @@ AWS CLI errors were being silenced (`2>/dev/null || echo "deleted"`), causing au
 ## Applications Using This Infrastructure
 
 - **SNOMass Portal** — RDS, Lambda API, Lambda Migration
-- **Bloom Housing Prototype** — RDS
+- **Bloom Housing Prototype** — RDS (orchestrated via `bloom-deploy/bloom-up.sh` and `bloom-down.sh`)
+
+## Finding AWS Resource IDs (for config setup)
+
+```bash
+# Get subnet IDs
+aws ec2 describe-subnets --query 'Subnets[].{Name:Tags[0].Value,SubnetId:SubnetId}' --output table --profile housing-prototype
+
+# Get Elastic IP allocation IDs
+aws ec2 describe-addresses --domain vpc --profile housing-prototype
+
+# Get route table IDs
+aws ec2 describe-route-tables --query 'RouteTables[].{Name:Tags[0].Value,RouteTableId:RouteTableId}' --output table --profile housing-prototype
+```
+
+## NAT State File Format
+
+`.portfolio-nat-state.json` tracks each gateway:
+
+```json
+{
+  "portfolio-managed-nat": {
+    "nat_gateway_id": "ngw-xxxxxxxx",
+    "elastic_ip_allocation_id": "eipalloc-xxxxxxxx",
+    "status": "available",
+    "public_ip": "52.72.164.240",
+    "last_action": "Created at 2026-03-13T14:30:00Z"
+  }
+}
+```
+
+If this file is missing or stale, `stop` auto-syncs by querying AWS via Name tag.
 
 ## Troubleshooting
 
@@ -89,7 +120,17 @@ AWS CLI errors were being silenced (`2>/dev/null || echo "deleted"`), causing au
 
 **"NAT Gateway already deleted" when it's actually running** → State file is stale. The `stop` command now handles this automatically by syncing state and looking up by Name tag.
 
+**"NAT Gateway not found: <name>"** → Name doesn't match config. Run `./portfolio-nat-manager.sh list` to see configured names.
+
+**"Timeout waiting for NAT Gateway"** → AWS is slow. Wait 30 seconds and retry the same command.
+
 **Route table updates fail** → Non-fatal. NAT was created/deleted but route update failed. Update manually:
 ```bash
 aws ec2 replace-route --route-table-id <rtb-id> --destination-cidr-block 0.0.0.0/0 --nat-gateway-id <new-nat-id> --profile housing-prototype
+```
+
+**"Elastic IP not configured"** → State file missing the allocation ID. Get it and patch the state file:
+```bash
+aws ec2 describe-addresses --domain vpc --profile housing-prototype
+# Then edit .portfolio-nat-state.json and add the elastic_ip_allocation_id field
 ```
