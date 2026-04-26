@@ -75,13 +75,13 @@ AWS CLI errors were being silenced (`2>/dev/null || echo "deleted"`), causing au
 # Stop everything (max savings)
 ./portfolio-nat-manager.sh stop portfolio-managed-nat
 ./portfolio-rds-manager.sh stop bloom-prototype
-./portfolio-rds-manager.sh stop snomass
 ```
 
 ## Applications Using This Infrastructure
 
-- **SNOMass Portal** — RDS, Lambda API, Lambda Migration
 - **Bloom Housing Prototype** — RDS (orchestrated via `bloom-deploy/bloom-up.sh` and `bloom-down.sh`)
+
+> **SNO Mass Portal** was decommissioned 2026-04-25. Final snapshot: `snomass-final-teardown-20260425`. See Google Drive "SNO Mass Portal — AWS Teardown & Restore Guide" for restore instructions.
 
 ## Finding AWS Resource IDs (for config setup)
 

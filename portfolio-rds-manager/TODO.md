@@ -61,7 +61,8 @@
 |----------|----------------------|----------------------|
 | NAT Gateway (`portfolio-managed-nat`) | ~$40 | ~$0.32 (EIP only) |
 | RDS `bloom-prototype` | ~$13 | ~$6.50 (storage) |
-| RDS `snomass` | ~$13 | ~$6.50 (storage) |
-| **Total** | **~$66** | **~$13** |
+| RDS `snomass` | ~~$13~~ | ~~$6.50~~ | decommissioned 2026-04-25 |
+| **Total** | **~$53** | **~$6.82** |
 
-**Max monthly savings when everything stopped: ~$53/month**
+**Max monthly savings when everything stopped: ~$46/month**
+**snomass final snapshot retained at ~$1.90/mo — delete when no longer needed**
