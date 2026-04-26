@@ -81,7 +81,7 @@ AWS CLI errors were being silenced (`2>/dev/null || echo "deleted"`), causing au
 
 - **Bloom Housing Prototype** — RDS (orchestrated via `bloom-deploy/bloom-up.sh` and `bloom-down.sh`)
 
-> **SNO Mass Portal** was decommissioned 2026-04-25. Final snapshot: `snomass-final-teardown-20260425`. See Google Drive "SNO Mass Portal — AWS Teardown & Restore Guide" for restore instructions.
+> **SNO Mass Portal** was decommissioned 2026-04-25. SQL dump backup: `snomass-backup-20260425.sql` (stored in Google Drive). See "SNO Mass Portal — AWS Teardown & Restore Guide (v2)" in Google Drive for restore instructions.
 
 ## Finding AWS Resource IDs (for config setup)
 
