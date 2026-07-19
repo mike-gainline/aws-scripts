@@ -269,11 +269,24 @@ cmd_stop() {
         --profile "$AWS_PROFILE" > /dev/null || die "Failed to stop instance"
 
     # Wait for stopped state
-    log_info "Waiting for instance to stop (this takes ~1 minute)..."
-    aws rds wait db-instance-stopped \
-        --db-instance-identifier "$db_id" \
-        --region "$REGION" \
-        --profile "$AWS_PROFILE" || die "Timeout waiting for stop"
+    # Note: RDS has no "db-instance-stopped" CLI waiter, so poll manually.
+    log_info "Waiting for instance to stop (this can take several minutes)..."
+    local waited=0
+    local max_wait=1200
+    local poll_interval=15
+    local status=""
+    while [ "$waited" -lt "$max_wait" ]; do
+        status=$(aws rds describe-db-instances \
+            --db-instance-identifier "$db_id" \
+            --region "$REGION" \
+            --profile "$AWS_PROFILE" \
+            --query 'DBInstances[0].DBInstanceStatus' \
+            --output text)
+        [ "$status" = "stopped" ] && break
+        sleep "$poll_interval"
+        waited=$((waited + poll_interval))
+    done
+    [ "$status" = "stopped" ] || die "Timeout waiting for stop (last status: $status)"
     
     # Save state
     save_state "$instance_name" "status" "stopped"
